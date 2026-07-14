@@ -1,69 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Profile</title>
+    <title>Profile</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
 <div class="layout-container">
 
-    <header>
-        <button id="back-btn" class="btn-secondary">← Back</button>
-        <span style="margin-left:10px;">Profile</span>
-    </header>
+<header>
+    <button class="btn-secondary" onclick="history.back()">
+        ← Back
+    </button>
+</header>
 
-    <div class="profile-card">
 
-        <h2 id="profile-name">@Loading...</h2>
+<div class="profile-card">
 
-        <p id="profile-number">User #...</p>
+<h2 id="username">
+Loading...
+</h2>
 
-        <p id="profile-joined">Joined ...</p>
+<p id="user-number"></p>
 
-        <div class="profile-stats">
-
-            <div>
-                <strong id="profile-posts">0</strong>
-                <span>Posts</span>
-            </div>
-
-            <div>
-                <strong id="profile-followers">0</strong>
-                <span>Followers</span>
-            </div>
-
-            <div>
-                <strong id="profile-following">0</strong>
-                <span>Following</span>
-            </div>
-
-        </div>
-
-        <br>
-
-        <button
-            id="follow-btn"
-            class="btn-primary"
-            style="display:none;">
-            Follow
-        </button>
-
-    </div>
-
-    <div id="timeline">
-        <!-- User's posts appear here -->
-    </div>
+<p id="join-date"></p>
 
 </div>
 
-<script>
-document.getElementById("back-btn").onclick = () => {
-    window.location.href = "index.html";
-};
-</script>
+
+<div id="timeline"></div>
+
+
+</div>
+
 
 <script type="module" src="user.js"></script>
 
