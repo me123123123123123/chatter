@@ -7,11 +7,14 @@ collection,
 addDoc,
 getDoc,
 setDoc,
+updateDoc,
 doc,
 onSnapshot,
 query,
 orderBy,
-runTransaction
+runTransaction,
+arrayUnion,
+arrayRemove
 }
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -163,23 +166,32 @@ document.getElementById("btn-post").onclick = async () => {
 
 // LOAD POSTS
 function loadPosts() {
+
   if (postsListener) postsListener();
+
 
   const q = query(
     collection(db, "posts"),
     orderBy("timestamp", "desc")
   );
 
+
   postsListener = onSnapshot(q, (snap) => {
+
 
     timeline.innerHTML = "";
 
+
     snap.forEach(post => {
+
 
       const data = post.data();
 
+
       const div = document.createElement("div");
+
       div.className = "tweet";
+
 
 
       const displayNum = data.postNumber !== undefined
@@ -187,45 +199,123 @@ function loadPosts() {
         : "";
 
 
+
+      const likeCount = data.likes
+        ? data.likes.length
+        : 0;
+
+
+
       div.innerHTML = `
+
         <div class="tweet-header">
 
           <b class="tweet-author">
             @${data.authorUsername}
           </b>
 
+
           <span style="
             color: gray;
             font-size: 0.8em;
             margin-left: 5px;">
+
             ${displayNum}
+
           </span>
 
         </div>
 
 
+
         <div class="tweet-body">
+
           ${data.body}
+
         </div>
+
+
+
+        <button class="like-btn">
+
+          ❤️ ${likeCount}
+
+        </button>
+
+
       `;
 
 
-      // Click username → open profile page
+
+      // Open profile when clicking username
       const usernameButton =
-        div.querySelector(".tweet-author");
+      div.querySelector(".tweet-author");
+
 
 
       usernameButton.onclick = () => {
 
+
         window.location.href =
         "user.html?id=" + data.authorUID;
+
 
       };
 
 
+
+
+      // Like button
+      const likeButton =
+      div.querySelector(".like-btn");
+
+
+
+      likeButton.onclick = () => {
+
+
+        toggleLike(
+          post.id,
+          data.likes || []
+        );
+
+
+      };
+
+
+
       timeline.appendChild(div);
+
+
 
     });
 
+
   });
+
+}
+
+async function toggleLike(postID, likes) {
+
+    if (!uid) {
+        alert("Login first");
+        return;
+    }
+
+    const postRef = doc(db, "posts", postID);
+
+    if (likes.includes(uid)) {
+
+        await updateDoc(postRef,{
+            likes: arrayRemove(uid)
+        });
+
+    } else {
+
+        await updateDoc(postRef,{
+            likes: arrayUnion(uid)
+        });
+
+    }
+
 }
