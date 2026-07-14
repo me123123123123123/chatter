@@ -10,7 +10,8 @@ setDoc,
 doc,
 onSnapshot,
 query,
-orderBy
+orderBy,
+runTransaction // <-- Added runTransaction for safe counting
 }
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -39,37 +40,48 @@ const firebaseConfig = {
 
 
 const app = initializeApp(firebaseConfig);
-
-const db=getFirestore(app);
-
-const auth=getAuth(app);
-
-const provider=new GoogleAuthProvider();
+const db = getFirestore(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
 
 
 
-let username=null;
-let uid=null;
+let username = null;
+let uid = null;
 
 
 
-const timeline=document.getElementById("timeline");
+const timeline = document.getElementById("timeline");
 
+
+//
+// NEW: HELPER TO SAFELY INCREMENT COUNTERS
+//
+async function getNextNumber(type) { // type is either 'users' or 'posts'
+  const counterRef = doc(db, "counters", type);
+
+  return await runTransaction(db, async (transaction) => {
+    const counterDoc = await transaction.get(counterRef);
+    
+    if (!counterDoc.exists()) {
+      throw "Counter document does not exist!";
+    }
+
+    // Read current count, add 1, write it back, then return it
+    const newCount = counterDoc.data().count + 1;
+    transaction.update(counterRef, { count: newCount });
+    return newCount;
+  });
+}
 
 
 //
 // GOOGLE LOGIN
 //
-
 document
 .getElementById("btn-google")
-.onclick=async()=>{
-
-await signInWithPopup(
-auth,
-provider
-);
-
+.onclick = async () => {
+  await signInWithPopup(auth, provider);
 };
 
 
@@ -77,114 +89,56 @@ provider
 //
 // LOGOUT
 //
-
 document
 .getElementById("btn-logout")
-.onclick=()=>{
-
-signOut(auth);
-
+.onclick = () => {
+  signOut(auth);
 };
 
 
 
 //
-// AUTH CHECK
+// AUTH CHECK (Handles User Registration with userNumber)
 //
+onAuthStateChanged(auth, async (user) => {
 
-onAuthStateChanged(auth,async(user)=>{
+  if (!user) {
+    document.getElementById("auth-logged-out").style.display = "block";
+    document.getElementById("auth-logged-in").style.display = "none";
+    return;
+  }
 
+  uid = user.uid;
+  const userRef = doc(db, "users", uid);
+  const snap = await getDoc(userRef);
 
-if(!user){
+  if (!snap.exists()) {
+    let name = prompt("Choose your username");
 
-document
-.getElementById("auth-logged-out")
-.style.display="block";
+    if (!name) {
+      name = "User" + Date.now();
+    }
 
+    // Get the next sequential user ID!
+    const nextUserNumber = await getNextNumber("users");
 
-document
-.getElementById("auth-logged-in")
-.style.display="none";
+    await setDoc(userRef, {
+      username: name,
+      userNumber: nextUserNumber, // <-- Saved here!
+      email: user.email,
+      createdAt: Date.now()
+    });
 
+    username = name;
+  } else {
+    username = snap.data().username;
+  }
 
-return;
+  document.getElementById("auth-logged-out").style.display = "none";
+  document.getElementById("auth-logged-in").style.display = "block";
+  document.getElementById("current-user-display").textContent = "@" + username;
 
-}
-
-
-
-uid=user.uid;
-
-
-
-const userRef=doc(
-db,
-"users",
-uid
-);
-
-
-const snap=await getDoc(userRef);
-
-
-
-if(!snap.exists()){
-
-
-let name=prompt(
-"Choose your username"
-);
-
-
-if(!name)
-name="User"+Date.now();
-
-
-
-await setDoc(
-userRef,
-{
-username:name,
-email:user.email,
-createdAt:Date.now()
-}
-);
-
-
-
-username=name;
-
-
-}else{
-
-
-username=snap.data().username;
-
-
-}
-
-
-
-document
-.getElementById("auth-logged-out")
-.style.display="none";
-
-
-document
-.getElementById("auth-logged-in")
-.style.display="block";
-
-
-document
-.getElementById("current-user-display")
-.textContent="@"+username;
-
-
-
-loadPosts();
-
-
-
+  loadPosts();
 });
 
 
@@ -192,49 +146,31 @@ loadPosts();
 
 
 //
-// CREATE POST
+// CREATE POST (Saves post with postNumber)
 //
-
 document
 .getElementById("btn-post")
-.onclick=async()=>{
+.onclick = async () => {
 
+  let box = document.getElementById("tweet-input");
+  let text = box.value.trim();
 
-let box=
-document.getElementById("tweet-input");
+  if (!text) return;
 
+  // Get the next sequential post ID!
+  const nextPostNumber = await getNextNumber("posts");
 
-let text=box.value.trim();
+  await addDoc(collection(db, "posts"), {
+    postNumber: nextPostNumber, // <-- Saved here!
+    body: text,
+    authorUID: uid,
+    authorUsername: username,
+    timestamp: Date.now(),
+    likes: [],
+    replies: []
+  });
 
-
-
-if(!text)
-return;
-
-
-
-await addDoc(
-collection(db,"posts"),
-{
-
-body:text,
-
-authorUID:uid,
-
-authorUsername:username,
-
-timestamp:Date.now(),
-
-likes:[],
-
-replies:[]
-
-});
-
-
-box.value="";
-
-
+  box.value = "";
 };
 
 
@@ -244,66 +180,32 @@ box.value="";
 //
 // LOAD POSTS
 //
+function loadPosts() {
+  const q = query(
+    collection(db, "posts"),
+    orderBy("timestamp", "desc")
+  );
 
-function loadPosts(){
+  onSnapshot(q, (snap) => {
+    timeline.innerHTML = "";
 
+    snap.forEach(post => {
+      let data = post.data();
+      let div = document.createElement("div");
+      div.className = "tweet";
 
-const q=query(
-collection(db,"posts"),
-orderBy("timestamp","desc")
-);
+      div.innerHTML = `
+        <div class="tweet-header">
+          <b>@${data.authorUsername}</b> 
+          <!-- You can optionally show post numbers here like this: -->
+          <span style="color: gray; font-size: 0.8em;">#${data.postNumber || ''}</span>
+        </div>
+        <div class="tweet-body">
+          ${data.body}
+        </div>
+      `;
 
-
-
-onSnapshot(q,(snap)=>{
-
-
-timeline.innerHTML="";
-
-
-
-snap.forEach(post=>{
-
-
-let data=post.data();
-
-
-
-let div=document.createElement("div");
-
-
-div.className="tweet";
-
-
-div.innerHTML=`
-
-<div class="tweet-header">
-
-<b>@${data.authorUsername}</b>
-
-</div>
-
-
-<div class="tweet-body">
-
-${data.body}
-
-</div>
-
-`;
-
-
-
-timeline.appendChild(div);
-
-
-
-});
-
-
-
-});
-
-
-
+      timeline.appendChild(div);
+    });
+  });
 }
