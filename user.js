@@ -1,14 +1,14 @@
-import { initializeApp }
+import { initializeApp } 
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 
 import {
 getFirestore,
-doc,
-getDoc,
 collection,
+getDoc,
+getDocs,
+doc,
 query,
 where,
-getDocs,
 orderBy
 }
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -20,7 +20,8 @@ const firebaseConfig = {
   projectId: "happy-vs-mad",
   storageBucket: "happy-vs-mad.firebasestorage.app",
   messagingSenderId: "569442919002",
-  appId: "1:569442919002:web:16fbfd4f36a85033196e63"
+  appId: "1:569442919002:web:16fbfd4f36a85033196e63",
+  measurementId: "G-VV5ZNERHE6"
 };
 
 
@@ -28,9 +29,11 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 
-const params = new URLSearchParams(location.search);
+
+const params = new URLSearchParams(window.location.search);
 
 const userID = params.get("id");
+
 
 
 const usernameText =
@@ -49,9 +52,24 @@ document.getElementById("timeline");
 
 async function loadProfile(){
 
-    const userRef = doc(db,"users",userID);
 
-    const userSnap = await getDoc(userRef);
+    if(!userID){
+
+        usernameText.textContent =
+        "No user selected";
+
+        return;
+
+    }
+
+
+    const userRef =
+    doc(db,"users",userID);
+
+
+    const userSnap =
+    await getDoc(userRef);
+
 
 
     if(!userSnap.exists()){
@@ -60,10 +78,14 @@ async function loadProfile(){
         "User not found";
 
         return;
+
     }
 
 
-    const user = userSnap.data();
+
+    const user =
+    userSnap.data();
+
 
 
     usernameText.textContent =
@@ -87,56 +109,103 @@ async function loadProfile(){
 
 
 
+
 async function loadPosts(name){
 
 
-const q = query(
-collection(db,"posts"),
-where("authorUsername","==",name),
-orderBy("timestamp","desc")
-);
+    const q = query(
+        collection(db,"posts"),
+        where("authorUsername","==",name),
+        orderBy("timestamp","desc")
+    );
 
 
 
-const posts =
-await getDocs(q);
+    const posts =
+    await getDocs(q);
 
 
 
-posts.forEach(post=>{
-
-
-const data = post.data();
-
-
-const div =
-document.createElement("div");
-
-
-div.className="tweet";
-
-
-div.innerHTML=`
-
-<div class="tweet-header">
-<b>@${data.authorUsername}</b>
-#${data.postNumber}
-</div>
-
-<div class="tweet-body">
-${data.body}
-</div>
-
-`;
-
-
-timeline.appendChild(div);
+    timeline.innerHTML = "";
 
 
 
-});
+    if(posts.empty){
+
+
+        timeline.innerHTML = `
+
+        <div class="tweet">
+
+        No posts yet.
+
+        </div>
+
+        `;
+
+
+        return;
+
+    }
+
+
+
+
+    posts.forEach(post=>{
+
+
+        const data =
+        post.data();
+
+
+
+        const div =
+        document.createElement("div");
+
+
+        div.className =
+        "tweet";
+
+
+
+        div.innerHTML = `
+
+        <div class="tweet-header">
+
+            <b>
+            @${data.authorUsername}
+            </b>
+
+            <span style="
+            color:gray;
+            font-size:0.8em;
+            margin-left:5px;">
+
+            #${data.postNumber || ""}
+
+            </span>
+
+        </div>
+
+
+        <div class="tweet-body">
+
+        ${data.body}
+
+        </div>
+
+        `;
+
+
+
+        timeline.appendChild(div);
+
+
+    });
+
 
 }
+
 
 
 loadProfile();
