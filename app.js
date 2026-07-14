@@ -171,27 +171,61 @@ function loadPosts() {
   );
 
   postsListener = onSnapshot(q, (snap) => {
+
     timeline.innerHTML = "";
 
     snap.forEach(post => {
+
       const data = post.data();
+
       const div = document.createElement("div");
       div.className = "tweet";
 
-      // Display '#' followed by the post number (or blank if it doesn't have one yet)
-      const displayNum = data.postNumber !== undefined ? `#${data.postNumber}` : '';
+
+      const displayNum = data.postNumber !== undefined
+        ? `#${data.postNumber}`
+        : "";
+
 
       div.innerHTML = `
         <div class="tweet-header">
-          <b>@${data.authorUsername}</b>
-          <span style="color: gray; font-size: 0.8em; margin-left: 5px;">${displayNum}</span>
+
+          <b class="tweet-author">
+            @${data.authorUsername}
+          </b>
+
+          <span style="
+            color: gray;
+            font-size: 0.8em;
+            margin-left: 5px;">
+            ${displayNum}
+          </span>
+
         </div>
+
+
         <div class="tweet-body">
           ${data.body}
         </div>
       `;
 
+
+      // Click username → open profile page
+      const usernameButton =
+        div.querySelector(".tweet-author");
+
+
+      usernameButton.onclick = () => {
+
+        window.location.href =
+        "user.html?id=" + data.authorUID;
+
+      };
+
+
       timeline.appendChild(div);
+
     });
+
   });
 }
