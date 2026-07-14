@@ -1,67 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Profile - Chatter</title>
-
-<link rel="stylesheet" href="style.css">
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
-
 <body>
 
 <div class="layout-container">
 
+    <header>
+        <button id="back-btn" class="btn-secondary">← Back</button>
+        <span style="margin-left:10px;font-weight:bold;">Profile</span>
+    </header>
 
-<header>
-<button 
-class="btn-secondary"
-onclick="history.back()">
-← Back
-</button>
-</header>
+    <div class="profile-card">
 
+        <h2 id="profile-name">@Loading...</h2>
 
+        <p id="profile-number">User #...</p>
 
-<div id="profile-card" class="profile-card">
+        <p id="profile-joined">Joined ...</p>
 
-<h1 id="username">
-Loading...
-</h1>
+        <div class="profile-stats">
 
+            <div>
+                <strong id="profile-posts">0</strong>
+                <br>
+                Posts
+            </div>
 
-<p id="userid"></p>
+            <div>
+                <strong id="profile-followers">0</strong>
+                <br>
+                Followers
+            </div>
 
+            <div>
+                <strong id="profile-following">0</strong>
+                <br>
+                Following
+            </div>
 
-<p>
-Posts:
-<strong id="post-count">
-0
-</strong>
-</p>
+        </div>
 
+        <br>
+
+        <button
+            id="follow-btn"
+            class="btn-primary"
+            style="display:none;">
+            Follow
+        </button>
+
+    </div>
+
+    <div id="timeline"></div>
 
 </div>
-
-
-
-
-<div id="timeline">
-
-</div>
-
-
-</div>
-
-
 
 <script type="module" src="user.js"></script>
 
+<script>
+document.getElementById("back-btn").onclick = () => {
+    history.back();
+};
+</script>
 
 </body>
-
 </html>
