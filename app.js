@@ -8,6 +8,7 @@ addDoc,
 getDoc,
 setDoc,
 updateDoc,
+deleteDoc,
 doc,
 onSnapshot,
 query,
@@ -17,6 +18,7 @@ arrayUnion,
 arrayRemove
 }
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
 
 import {
 getAuth,
@@ -44,220 +46,440 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
+
 let username = null;
 let uid = null;
 let postsListener = null;
 
+
 const timeline = document.getElementById("timeline");
 
 
-//
-// FIXED: SAFELY GET THE NEXT SEQUENTIAL NUMBER
-//
+
+// GET NEXT NUMBER
 async function getNextNumber(type) {
+
   const ref = doc(db, "counters", type);
 
+
   return await runTransaction(db, async (transaction) => {
-    // Correct transaction read
+
+
     const snap = await transaction.get(ref);
-    
+
+
     let nextCount = 1;
 
+
     if (snap.exists()) {
-      nextCount = (snap.data().count || 0) + 1;
+
+      nextCount =
+      (snap.data().count || 0) + 1;
+
     }
 
-    // Set or update the document safely
-    transaction.set(ref, { count: nextCount }, { merge: true });
+
+    transaction.set(
+      ref,
+      { count: nextCount },
+      { merge:true }
+    );
+
 
     return nextCount;
+
+
   });
+
 }
+
+
 
 
 // GOOGLE LOGIN
 document.getElementById("btn-google").onclick = async () => {
+
   try {
-    await signInWithPopup(auth, provider);
-  } catch (err) {
+
+    await signInWithPopup(
+      auth,
+      provider
+    );
+
+
+  } catch(err) {
+
     console.error(err);
+
     alert(err.message);
+
   }
+
 };
+
+
 
 
 // LOGOUT
 document.getElementById("btn-logout").onclick = () => {
+
   signOut(auth);
+
 };
+
+
 
 
 // AUTH
 onAuthStateChanged(auth, async (user) => {
+
+
   if (!user) {
+
+
     document.getElementById("auth-logged-out").style.display = "block";
+
     document.getElementById("auth-logged-in").style.display = "none";
+
     document.getElementById("main-compose").style.display = "none";
+
+
     return;
+
   }
+
+
 
   uid = user.uid;
-  const userRef = doc(db, "users", uid);
-  const snap = await getDoc(userRef);
+
+
+
+  const userRef =
+  doc(db,"users",uid);
+
+
+
+  const snap =
+  await getDoc(userRef);
+
+
 
   if (!snap.exists()) {
-    let name = prompt("Choose your username");
 
-    if (!name) name = "User" + Date.now();
 
-    const number = await getNextNumber("users");
+    let name =
+    prompt("Choose your username");
+
+
+
+    if (!name) {
+
+      name =
+      "User" + Date.now();
+
+    }
+
+
+
+    const number =
+    await getNextNumber("users");
+
+
 
     await setDoc(userRef, {
-      username: name,
-      userNumber: number,
-      email: user.email,
-      createdAt: Date.now()
+
+
+      username:name,
+
+      userNumber:number,
+
+      email:user.email,
+
+      createdAt:Date.now()
+
+
     });
 
+
+
     username = name;
+
+
+
   } else {
-    username = snap.data().username;
+
+
+    username =
+    snap.data().username;
+
+
   }
 
-  // UI UPDATE
+
+
+
   document.getElementById("auth-logged-out").style.display = "none";
+
   document.getElementById("auth-logged-in").style.display = "block";
+
   document.getElementById("main-compose").style.display = "block";
-  document.getElementById("current-user-display").textContent = "@" + username;
+
+
+  document.getElementById("current-user-display").textContent =
+  "@" + username;
+
+
 
   loadPosts();
-});
 
+
+});
 
 // CREATE POST
 document.getElementById("btn-post").onclick = async () => {
-  if (!uid) return alert("Login first");
 
-  const box = document.getElementById("tweet-input");
-  const text = box.value.trim();
+
+  if (!uid) {
+
+    alert("Login first");
+
+    return;
+
+  }
+
+
+
+  const box =
+  document.getElementById("tweet-input");
+
+
+  const text =
+  box.value.trim();
+
+
 
   if (!text) return;
 
-  try {
-    const postNumber = await getNextNumber("posts");
 
-    await addDoc(collection(db, "posts"), {
-      postNumber,
-      body: text,
-      authorUID: uid,
-      authorUsername: username,
-      timestamp: Date.now(),
-      likes: [],
-      replies: []
-    });
+
+  try {
+
+
+    const postNumber =
+    await getNextNumber("posts");
+
+
+
+    await addDoc(
+      collection(db,"posts"),
+      {
+
+        postNumber,
+
+        body:text,
+
+        authorUID:uid,
+
+        authorUsername:username,
+
+        timestamp:Date.now(),
+
+        likes:[],
+
+        replies:[]
+
+      }
+    );
+
+
 
     box.value = "";
-  } catch (error) {
-    console.error("Error creating post:", error);
-    alert("Could not publish post. Check developer console.");
+
+
+
+  } catch(error) {
+
+
+    console.error(
+      "Error creating post:",
+      error
+    );
+
+
+    alert(
+      "Could not publish post."
+    );
+
+
   }
+
+
 };
+
+
+
 
 
 // LOAD POSTS
 function loadPosts() {
 
-  if (postsListener) postsListener();
+
+  if (postsListener) {
+
+    postsListener();
+
+  }
 
 
-  const q = query(
-    collection(db, "posts"),
-    orderBy("timestamp", "desc")
+
+
+  const q =
+  query(
+    collection(db,"posts"),
+    orderBy(
+      "timestamp",
+      "desc"
+    )
   );
 
 
-  postsListener = onSnapshot(q, (snap) => {
+
+
+
+  postsListener =
+  onSnapshot(q,(snap)=>{
+
 
 
     timeline.innerHTML = "";
 
 
-    snap.forEach(post => {
-
-
-      const data = post.data();
-
-
-      const div = document.createElement("div");
-
-      div.className = "tweet";
 
 
 
-      const displayNum = data.postNumber !== undefined
-        ? `#${data.postNumber}`
-        : "";
+    snap.forEach(post=>{
 
 
 
-      const likeCount = data.likes
-        ? data.likes.length
-        : 0;
+      const data =
+      post.data();
+
+
+
+      const div =
+      document.createElement("div");
+
+
+
+      div.className =
+      "tweet";
+
+
+
+
+      const displayNum =
+      data.postNumber !== undefined
+      ? `#${data.postNumber}`
+      : "";
+
+
+
+
+      const likeCount =
+      data.likes
+      ? data.likes.length
+      : 0;
+
+
 
 
 
       div.innerHTML = `
 
-        <div class="tweet-header">
 
-          <b class="tweet-author">
-            @${data.authorUsername}
-          </b>
+      <div class="tweet-header">
 
 
-          <span style="
-            color: gray;
-            font-size: 0.8em;
-            margin-left: 5px;">
+        <b class="tweet-author">
 
-            ${displayNum}
+          @${data.authorUsername}
 
-          </span>
-
-        </div>
+        </b>
 
 
 
-        <div class="tweet-body">
+        <span style="
+        color:gray;
+        font-size:0.8em;
+        margin-left:5px;">
 
-          ${data.body}
+        ${displayNum}
 
-        </div>
+        </span>
 
 
 
-        <button class="like-btn">
+      </div>
 
-          ❤️ ${likeCount}
 
-        </button>
+
+      <div class="tweet-body">
+
+      ${data.body}
+
+      </div>
+
+
+
+
+
+      <button class="like-btn">
+
+      ❤️ ${likeCount}
+
+      </button>
+
+
+
+
+
+      ${
+      data.authorUID === uid
+      ?
+
+      `
+
+      <button class="delete-btn">
+
+      🗑️ Delete
+
+      </button>
+
+      `
+
+      :
+
+      ""
+
+      }
+
 
 
       `;
 
 
 
-      // Open profile when clicking username
-      const usernameButton =
-      div.querySelector(".tweet-author");
 
 
 
-      usernameButton.onclick = () => {
+      // OPEN PROFILE
+
+      div.querySelector(".tweet-author").onclick = ()=>{
 
 
         window.location.href =
-        "user.html?id=" + data.authorUID;
+        "user.html?id=" +
+        data.authorUID;
 
 
       };
@@ -265,22 +487,57 @@ function loadPosts() {
 
 
 
-      // Like button
-      const likeButton =
-      div.querySelector(".like-btn");
 
 
 
-      likeButton.onclick = () => {
+      // LIKE BUTTON
+
+      div.querySelector(".like-btn").onclick = ()=>{
 
 
         toggleLike(
+
           post.id,
+
           data.likes || []
+
         );
 
 
       };
+
+
+
+
+
+
+
+      // DELETE BUTTON
+
+      const deleteButton =
+      div.querySelector(".delete-btn");
+
+
+
+      if(deleteButton){
+
+
+        deleteButton.onclick = ()=>{
+
+
+          deletePost(
+            post.id
+          );
+
+
+        };
+
+
+      }
+
+
+
+
 
 
 
@@ -291,31 +548,120 @@ function loadPosts() {
     });
 
 
+
   });
+
+
 
 }
 
-async function toggleLike(postID, likes) {
 
-    if (!uid) {
-        alert("Login first");
-        return;
-    }
 
-    const postRef = doc(db, "posts", postID);
 
-    if (likes.includes(uid)) {
 
-        await updateDoc(postRef,{
-            likes: arrayRemove(uid)
-        });
 
-    } else {
 
-        await updateDoc(postRef,{
-            likes: arrayUnion(uid)
-        });
+// LIKE SYSTEM
 
-    }
+async function toggleLike(postID, likes){
+
+
+
+  if(!uid){
+
+    alert("Login first");
+
+    return;
+
+  }
+
+
+
+
+  const postRef =
+  doc(
+    db,
+    "posts",
+    postID
+  );
+
+
+
+
+
+  if(likes.includes(uid)){
+
+
+
+    await updateDoc(
+      postRef,
+      {
+
+        likes:
+        arrayRemove(uid)
+
+      }
+    );
+
+
+
+  } else {
+
+
+
+    await updateDoc(
+      postRef,
+      {
+
+        likes:
+        arrayUnion(uid)
+
+      }
+    );
+
+
+
+  }
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// DELETE SYSTEM
+
+async function deletePost(postID){
+
+
+
+  if(!uid){
+
+    alert("Login first");
+
+    return;
+
+  }
+
+
+
+  const postRef =
+  doc(
+    db,
+    "posts",
+    postID
+  );
+
+
+
+  await deleteDoc(postRef);
+
+
 
 }
