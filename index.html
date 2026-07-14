@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Home / Chatter</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+
+<body>
+
+<div class="layout-container">
+
+
+    <!-- AUTH BAR -->
+    <div id="auth-bar" class="auth-strip">
+
+        <div id="auth-logged-out">
+
+            <button id="btn-google" class="btn-google">
+                Continue with Google
+            </button>
+
+        </div>
+
+
+
+        <div id="auth-logged-in" style="display:none;">
+
+            <span>
+                Logged in as
+                <strong id="current-user-display">
+                    @loading...
+                </strong>
+            </span>
+
+
+            <button id="btn-logout" class="btn-secondary">
+                Log Out
+            </button>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- HEADER -->
+
+    <header>
+
+        <span id="feed-title">
+            Home
+        </span>
+
+
+        <button 
+            id="btn-back-home"
+            class="btn-secondary"
+            style="display:none; float:right;">
+            Back
+        </button>
+
+    </header>
+
+
+
+
+    <!-- PROFILE CARD -->
+
+    <div 
+        id="profile-card"
+        class="profile-card"
+        style="display:none;">
+
+        <h2 id="profile-card-handle">
+            @username
+        </h2>
+
+
+        <div class="profile-stats">
+
+            <span>
+                <strong id="stat-posts">
+                    0
+                </strong>
+                Posts
+            </span>
+
+
+            <span>
+                <strong id="stat-likes">
+                    0
+                </strong>
+                Likes
+            </span>
+
+        </div>
+
+    </div>
+
+
+
+
+    <!-- CREATE POST -->
+
+    <div 
+        class="compose-box"
+        id="main-compose"
+        style="display:none;">
+
+
+        <textarea
+            id="tweet-input"
+            placeholder="What's happening?"
+            rows="3">
+        </textarea>
+
+
+        <div class="compose-footer">
+
+            <button
+                id="btn-post"
+                class="btn-primary">
+                Post
+            </button>
+
+        </div>
+
+
+    </div>
+
+
+
+
+
+    <!-- POSTS -->
+
+    <div id="timeline">
+
+    </div>
+
+
+
+
+    <!-- SCROLL -->
+
+    <div
+        id="scroll-anchor"
+        style="
+        height:20px;
+        margin:1rem 0;
+        text-align:center;
+        color:var(--text-secondary);
+        font-size:.85rem;
+        ">
+
+        Loading posts...
+
+    </div>
+
+
+
+</div>
+
+
+
+<script 
+    type="module"
+    src="app.js">
+</script>
+
+
+</body>
+
+</html>
