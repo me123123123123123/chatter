@@ -11,10 +11,9 @@ doc,
 onSnapshot,
 query,
 orderBy,
-runTransaction // <-- Added runTransaction for safe counting
+runTransaction
 }
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
 
 import {
 getAuth,
@@ -24,7 +23,6 @@ signOut,
 onAuthStateChanged
 }
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
 
 
 const firebaseConfig = {
@@ -38,174 +36,338 @@ const firebaseConfig = {
 };
 
 
-
 const app = initializeApp(firebaseConfig);
+
 const db = getFirestore(app);
 const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
 
+const provider = new GoogleAuthProvider();
 
 
 let username = null;
 let uid = null;
 
+let postsListener = null;
 
 
 const timeline = document.getElementById("timeline");
 
 
-//
-// NEW: HELPER TO SAFELY INCREMENT COUNTERS
-//
-async function getNextNumber(type) { // type is either 'users' or 'posts'
-  const counterRef = doc(db, "counters", type);
 
-  return await runTransaction(db, async (transaction) => {
-    const counterDoc = await transaction.get(counterRef);
-    
-    if (!counterDoc.exists()) {
-      throw "Counter document does not exist!";
-    }
+async function getNextNumber(type){
 
-    // Read current count, add 1, write it back, then return it
-    const newCount = counterDoc.data().count + 1;
-    transaction.update(counterRef, { count: newCount });
-    return newCount;
-  });
+const ref = doc(db,"counters",type);
+
+
+return await runTransaction(db, async(transaction)=>{
+
+const snap = await transaction.get(ref);
+
+
+if(!snap.exists()){
+
+transaction.set(ref,{
+count:1
+});
+
+return 1;
+
 }
 
 
-//
+const next = snap.data().count + 1;
+
+
+transaction.update(ref,{
+count:next
+});
+
+
+return next;
+
+
+});
+
+}
+
+
+
+
 // GOOGLE LOGIN
-//
-document
-.getElementById("btn-google")
-.onclick = async () => {
-  await signInWithPopup(auth, provider);
+
+document.getElementById("btn-google").onclick = async()=>{
+
+try{
+
+await signInWithPopup(
+auth,
+provider
+);
+
+}
+
+catch(err){
+
+console.error(err);
+
+alert(err.message);
+
+}
+
 };
 
 
 
-//
+
 // LOGOUT
-//
-document
-.getElementById("btn-logout")
-.onclick = () => {
-  signOut(auth);
+
+document.getElementById("btn-logout").onclick=()=>{
+
+signOut(auth);
+
 };
 
 
 
-//
-// AUTH CHECK (Handles User Registration with userNumber)
-//
-onAuthStateChanged(auth, async (user) => {
 
-  if (!user) {
-    document.getElementById("auth-logged-out").style.display = "block";
-    document.getElementById("auth-logged-in").style.display = "none";
-    return;
-  }
 
-  uid = user.uid;
-  const userRef = doc(db, "users", uid);
-  const snap = await getDoc(userRef);
 
-  if (!snap.exists()) {
-    let name = prompt("Choose your username");
+// AUTH
 
-    if (!name) {
-      name = "User" + Date.now();
-    }
+onAuthStateChanged(auth,async(user)=>{
 
-    // Get the next sequential user ID!
-    const nextUserNumber = await getNextNumber("users");
 
-    await setDoc(userRef, {
-      username: name,
-      userNumber: nextUserNumber, // <-- Saved here!
-      email: user.email,
-      createdAt: Date.now()
-    });
+if(!user){
 
-    username = name;
-  } else {
-    username = snap.data().username;
-  }
 
-  document.getElementById("auth-logged-out").style.display = "none";
-  document.getElementById("auth-logged-in").style.display = "block";
-  document.getElementById("current-user-display").textContent = "@" + username;
+document.getElementById("auth-logged-out").style.display="block";
 
-  loadPosts();
+document.getElementById("auth-logged-in").style.display="none";
+
+document.getElementById("main-compose").style.display="none";
+
+
+return;
+
+}
+
+
+
+uid=user.uid;
+
+
+
+const userRef=doc(db,"users",uid);
+
+const snap=await getDoc(userRef);
+
+
+
+if(!snap.exists()){
+
+
+let name=prompt(
+"Choose your username"
+);
+
+
+if(!name)
+name="User"+Date.now();
+
+
+
+const number =
+await getNextNumber("users");
+
+
+
+await setDoc(userRef,{
+
+username:name,
+
+userNumber:number,
+
+email:user.email,
+
+createdAt:Date.now()
+
+});
+
+
+
+username=name;
+
+
+}
+
+else{
+
+
+username=snap.data().username;
+
+
+}
+
+
+
+
+// UI UPDATE
+
+document.getElementById("auth-logged-out").style.display="none";
+
+document.getElementById("auth-logged-in").style.display="block";
+
+document.getElementById("main-compose").style.display="block";
+
+
+document.getElementById("current-user-display")
+.textContent="@"+username;
+
+
+
+loadPosts();
+
+
+
 });
 
 
 
 
 
-//
-// CREATE POST (Saves post with postNumber)
-//
-document
-.getElementById("btn-post")
-.onclick = async () => {
 
-  let box = document.getElementById("tweet-input");
-  let text = box.value.trim();
 
-  if (!text) return;
 
-  // Get the next sequential post ID!
-  const nextPostNumber = await getNextNumber("posts");
+// CREATE POST
 
-  await addDoc(collection(db, "posts"), {
-    postNumber: nextPostNumber, // <-- Saved here!
-    body: text,
-    authorUID: uid,
-    authorUsername: username,
-    timestamp: Date.now(),
-    likes: [],
-    replies: []
-  });
+document.getElementById("btn-post").onclick=async()=>{
 
-  box.value = "";
+
+if(!uid)
+return alert("Login first");
+
+
+
+const box=document.getElementById("tweet-input");
+
+
+const text=box.value.trim();
+
+
+
+if(!text)
+return;
+
+
+
+const postNumber =
+await getNextNumber("posts");
+
+
+
+await addDoc(
+collection(db,"posts"),
+{
+
+postNumber,
+
+body:text,
+
+authorUID:uid,
+
+authorUsername:username,
+
+timestamp:Date.now(),
+
+likes:[],
+
+replies:[]
+
+}
+
+);
+
+
+box.value="";
+
+
 };
 
 
 
 
 
-//
-// LOAD POSTS
-//
-function loadPosts() {
-  const q = query(
-    collection(db, "posts"),
-    orderBy("timestamp", "desc")
-  );
 
-  onSnapshot(q, (snap) => {
-    timeline.innerHTML = "";
 
-    snap.forEach(post => {
-      let data = post.data();
-      let div = document.createElement("div");
-      div.className = "tweet";
 
-      div.innerHTML = `
-        <div class="tweet-header">
-          <b>@${data.authorUsername}</b> 
-          <!-- You can optionally show post numbers here like this: -->
-          <span style="color: gray; font-size: 0.8em;">#${data.postNumber || ''}</span>
-        </div>
-        <div class="tweet-body">
-          ${data.body}
-        </div>
-      `;
+function loadPosts(){
 
-      timeline.appendChild(div);
-    });
-  });
+
+if(postsListener)
+postsListener();
+
+
+
+const q=query(
+collection(db,"posts"),
+orderBy("timestamp","desc")
+);
+
+
+
+postsListener=onSnapshot(q,(snap)=>{
+
+
+timeline.innerHTML="";
+
+
+snap.forEach(post=>{
+
+
+const data=post.data();
+
+
+
+const div=document.createElement("div");
+
+div.className="tweet";
+
+
+div.innerHTML=`
+
+<div class="tweet-header">
+
+<b>
+@${data.authorUsername}
+</b>
+
+<span>
+#${data.postNumber}
+</span>
+
+</div>
+
+
+<div class="tweet-body">
+
+${data.body}
+
+</div>
+
+`;
+
+
+
+timeline.appendChild(div);
+
+
+
+});
+
+
+
+});
+
+
+
 }
