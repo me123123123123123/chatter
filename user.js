@@ -36,55 +36,39 @@ const userID = params.get("id");
 
 
 
-const usernameText =
-document.getElementById("username");
-
-const numberText =
-document.getElementById("user-number");
-
-const dateText =
-document.getElementById("join-date");
-
-const timeline =
-document.getElementById("timeline");
+const usernameText = document.getElementById("username");
+const numberText = document.getElementById("user-number");
+const dateText = document.getElementById("join-date");
+const timeline = document.getElementById("timeline");
 
 
 
-async function loadProfile(){
+async function loadProfile() {
 
+    if (!userID) {
 
-    if(!userID){
-
-        usernameText.textContent =
-        "No user selected";
-
+        usernameText.textContent = "No user selected";
         return;
 
     }
 
 
-    const userRef =
-    doc(db,"users",userID);
+    const userRef = doc(db, "users", userID);
 
-
-    const userSnap =
-    await getDoc(userRef);
+    const userSnap = await getDoc(userRef);
 
 
 
-    if(!userSnap.exists()){
+    if (!userSnap.exists()) {
 
-        usernameText.textContent =
-        "User not found";
-
+        usernameText.textContent = "User not found";
         return;
 
     }
 
 
 
-    const user =
-    userSnap.data();
+    const user = userSnap.data();
 
 
 
@@ -97,32 +81,31 @@ async function loadProfile(){
 
 
     dateText.textContent =
-    "Joined " +
+    "Joined " + 
     new Date(user.createdAt)
     .toLocaleDateString();
 
 
 
-    loadPosts(user.username);
+    loadPosts(userID);
 
 }
 
 
 
 
-async function loadPosts(name){
+async function loadPosts(id) {
 
 
     const q = query(
-        collection(db,"posts"),
-        where("authorUsername","==",name),
-        orderBy("timestamp","desc")
+        collection(db, "posts"),
+        where("authorUID", "==", id),
+        orderBy("timestamp", "desc")
     );
 
 
 
-    const posts =
-    await getDocs(q);
+    const posts = await getDocs(q);
 
 
 
@@ -130,7 +113,7 @@ async function loadPosts(name){
 
 
 
-    if(posts.empty){
+    if (posts.empty) {
 
 
         timeline.innerHTML = `
@@ -143,28 +126,23 @@ async function loadPosts(name){
 
         `;
 
-
         return;
 
     }
 
 
 
+    posts.forEach(post => {
 
-    posts.forEach(post=>{
 
-
-        const data =
-        post.data();
+        const data = post.data();
 
 
 
-        const div =
-        document.createElement("div");
+        const div = document.createElement("div");
 
 
-        div.className =
-        "tweet";
+        div.className = "tweet";
 
 
 
@@ -176,11 +154,12 @@ async function loadPosts(name){
             @${data.authorUsername}
             </b>
 
+
             <span style="
             color:gray;
             font-size:0.8em;
             margin-left:5px;">
-
+            
             #${data.postNumber || ""}
 
             </span>
@@ -188,11 +167,13 @@ async function loadPosts(name){
         </div>
 
 
+
         <div class="tweet-body">
 
         ${data.body}
 
         </div>
+
 
         `;
 
