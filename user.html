@@ -12,7 +12,7 @@
 
     <header>
         <button id="back-btn" class="btn-secondary">← Back</button>
-        <span style="margin-left:10px;font-weight:bold;">Profile</span>
+        <span style="margin-left:10px;">Profile</span>
     </header>
 
     <div class="profile-card">
@@ -27,20 +27,17 @@
 
             <div>
                 <strong id="profile-posts">0</strong>
-                <br>
-                Posts
+                <span>Posts</span>
             </div>
 
             <div>
                 <strong id="profile-followers">0</strong>
-                <br>
-                Followers
+                <span>Followers</span>
             </div>
 
             <div>
                 <strong id="profile-following">0</strong>
-                <br>
-                Following
+                <span>Following</span>
             </div>
 
         </div>
@@ -56,17 +53,19 @@
 
     </div>
 
-    <div id="timeline"></div>
+    <div id="timeline">
+        <!-- User's posts appear here -->
+    </div>
 
 </div>
 
-<script type="module" src="user.js"></script>
-
 <script>
 document.getElementById("back-btn").onclick = () => {
-    history.back();
+    window.location.href = "index.html";
 };
 </script>
+
+<script type="module" src="user.js"></script>
 
 </body>
 </html>
