@@ -27,13 +27,13 @@ from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAIWg9Z55PeMTryDlAX8xWIrdZmgwX5BGs",
-  authDomain: "chatter-62b1a.firebaseapp.com",
-  projectId: "chatter-62b1a",
-  storageBucket: "chatter-62b1a.firebasestorage.app",
-  messagingSenderId: "321568451104",
-  appId: "1:321568451104:web:b8cdd5f4f10b6b7f65aa45",
-  measurementId: "G-542HZ96F2G"
+  apiKey: "AIzaSyBZl58Vjk_84vvNNaHRMADK4Ba0EwR_S6M",
+  authDomain: "happy-vs-mad.firebaseapp.com",
+  projectId: "happy-vs-mad",
+  storageBucket: "happy-vs-mad.firebasestorage.app",
+  messagingSenderId: "569442919002",
+  appId: "1:569442919002:web:16fbfd4f36a85033196e63",
+  measurementId: "G-VV5ZNERHE6"
 };
 
 
